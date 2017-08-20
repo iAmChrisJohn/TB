@@ -1,0 +1,78 @@
+# This script creates volumetric weighted exponential moving averages based on the high and low values read from market data.
+
+# Function to create average
+def averageOf(raw_data, index) #raw_data must be two-dimensional array, index must be integer
+  i = 0
+  sum = 0
+  raw_data.size.times do
+    sum += raw_data[i][index]
+  end
+  avg = sum/raw_data.size
+  return avg
+end
+
+# Function to create an exponential weighting factor
+def exponentialWeightingFactor(iterations, strength)
+  expo_weighting_sum = 0
+  i = 0
+  iterations.times do
+    expo_weighting_sum += Math.exp(-(i/strength))
+    i+=1
+  end
+  return expo_weighting_sum
+end
+
+# Function to create exponential weighted sum
+def exponentialWeightedSum(raw_data, price_index, price_strength) #raw_data must be two-dimensional array, index must be integer
+  i = 0
+  exponential_weighted_sum = 0
+  print raw_data[2][3]
+  raw_data.size.times do
+    exponential_weighted_sum += (raw_data[i][price_index])*Math.exp(-(i/price_strength))
+  end
+  return exponential_weighted_sum
+end
+
+# Function to create volume weighting factor
+def volumeWeightingFactor(raw_data, index, volume_index, volume_strength)
+  avg = averageOf(raw_data, volume_index)
+  volume_weighting_factor = Math.exp(volume_strength*(raw_data[index][volume_index]-avg))
+  return volume_weighting_factor
+end
+
+# Function to create a sum of a market price (open, high, low, close) that is adjusted for both volume and time
+def volumeExponentialWeightedSum(raw_data, price_index, price_strength, volume_index, volume_strength) #raw_data must be two-dimensional array, index must be integer
+  i = 0
+  volume_exponential_weighted_sum = 0
+  raw_data.size.times do
+    volume_exponential_weighted_sum += volumeWeightingFactor(raw_data, i, volume_index, volume_strength)*(raw_data[i][price_index])*Math.exp(-(i/price_strength))
+  end
+  return volume_exponential_weighted_sum
+end
+
+def volumeExponentialMovingAverage(raw_data, price_index, price_strength, volume_index, volume_strength)
+  volume_exponential_moving_average = volumeExponentialWeightedSum(raw_data, price_index, price_strength, volume_index, volume_strength)/exponentialWeightingFactor(raw_data.size, price_strength)
+  return volume_exponential_moving_average
+end
+
+
+# mar_data# is array containing unanalyzed market data from the API websocket. Its format is [timestamp, open, high, low, close, volume]
+# In application this data would be retrieved from GDAX
+
+
+mar_data0 = [0, 291, 295, 290, 292, 7]
+mar_data1 = [1, 292, 295, 289, 294, 8]
+mar_data2 = [2, 294, 297, 286, 289, 2]
+mar_data3 = [3, 289, 292, 285, 287, 23]
+mar_data4 = [4, 287, 290, 282, 288, 12]
+mar_data5 = [5, 288, 295, 283, 292, 9]
+mar_data6 = [6, 292, 301, 290, 297, 6]
+
+mar_data = Array.new(){Array.new()}
+
+mar_data = [mar_data0, mar_data1, mar_data2, mar_data3, mar_data4, mar_data5, mar_data6]
+
+
+print exponentialWeightedSum(mar_data.to_a, 2, 10)
+
+print "\n\n"
